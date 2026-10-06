@@ -1,21 +1,64 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/Login";
+import Registration from "./pages/Registration";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
+import AdminDashboard from "./pages/AdminDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Mobile Repair Centre
-        </h1>
+    <BrowserRouter>
+      <Routes>
 
-        <p className="mt-3 text-gray-600">
-          Tailwind CSS is working successfully!
-        </p>
+        <Route path="/" element={<Login />} />
 
-        <button className="mt-5 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Test Button
-        </button>
-      </div>
-    </div>
-  )
+        <Route path="/register" element={<Registration />} />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+        <Route
+          path="/reset-password/:uid/:token/"
+            element={<ResetPassword />}
+        />
+
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["STAFF"]}>
+              <StaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customer-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+              <CustomerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
