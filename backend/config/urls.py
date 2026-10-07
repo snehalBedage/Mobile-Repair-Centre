@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 from apps.accounts.views import (
     CustomTokenObtainPairView,
@@ -54,4 +54,5 @@ urlpatterns = [
         ResetPasswordView.as_view(),
         name='reset_password'
     ),
+    path('api/customers/', include('apps.customers.urls')),
 ]
