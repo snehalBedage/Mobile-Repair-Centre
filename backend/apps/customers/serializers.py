@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Customer
+from .models import Customer, Device
 from apps.accounts.models import User
 
 
@@ -61,3 +61,39 @@ class CustomerSerializer(serializers.ModelSerializer):
         )
 
         return customer
+
+class DeviceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Device
+
+        fields = [
+            'id',
+            'customer',
+            'brand',
+            'model',
+            'imei',
+            'device_condition',
+            'created_at',
+            'updated_at',
+        ]
+
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+        ]
+
+    def validate_imei(self, value):
+
+        if not value.isdigit():
+            raise serializers.ValidationError(
+                "IMEI must contain only numbers."
+            )
+
+        if len(value) != 15:
+            raise serializers.ValidationError(
+                "IMEI must be exactly 15 digits."
+            )
+
+        return value
