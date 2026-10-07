@@ -55,4 +55,6 @@ urlpatterns = [
         name='reset_password'
     ),
     path('api/customers/', include('apps.customers.urls')),
+
+    path('api/technicians/', include('apps.repairs.urls')),
 ]
