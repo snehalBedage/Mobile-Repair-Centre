@@ -43,12 +43,13 @@ class JobCard(models.Model):
     class Status(models.TextChoices):
         RECEIVED = 'RECEIVED', 'Received'
         DIAGNOSIS = 'DIAGNOSIS', 'Diagnosis'
-        ESTIMATE_PENDING = 'ESTIMATE_PENDING', 'Estimate Pending'
-        WAITING_APPROVAL = 'WAITING_APPROVAL', 'Waiting Approval'
+        ESTIMATE_PREPARED = 'ESTIMATE_PREPARED', 'Estimate Prepared'
+        WAITING_FOR_APPROVAL = 'WAITING_FOR_APPROVAL', 'Waiting for Approval'
         APPROVED = 'APPROVED', 'Approved'
-        REPAIR_IN_PROGRESS = 'REPAIR_IN_PROGRESS', 'Repair In Progress'
-        READY_FOR_QC = 'READY_FOR_QC', 'Ready for QC'
+        REJECTED = 'REJECTED', 'Rejected'
+        REPAIR_IN_PROGRESS = 'REPAIR_IN_PROGRESS', 'Repair in Progress'
         REPAIR_REQUIRED = 'REPAIR_REQUIRED', 'Repair Required'
+        READY_FOR_DELIVERY = 'READY_FOR_DELIVERY', 'Ready for Delivery'
         COMPLETED = 'COMPLETED', 'Completed'
         CANCELLED = 'CANCELLED', 'Cancelled'
 

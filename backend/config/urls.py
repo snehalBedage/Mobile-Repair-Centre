@@ -5,18 +5,29 @@ from apps.accounts.views import (
     CustomTokenObtainPairView,
     AdminTestView,
     CustomerRegistrationView,
-        ForgotPasswordView,
-        ResetPasswordView
-
+    ForgotPasswordView,
+    ResetPasswordView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
 
+    # =========================
+    # Django Admin
+    # =========================
+
+    path(
+        'admin/',
+        admin.site.urls
+    ),
+
+
+    # =========================
     # JWT Authentication
+    # =========================
+
     path(
         'api/auth/login/',
         CustomTokenObtainPairView.as_view(),
@@ -29,32 +40,67 @@ urlpatterns = [
         name='token_refresh'
     ),
 
+
+    # =========================
     # Customer Registration
+    # =========================
+
     path(
         'api/auth/register/',
         CustomerRegistrationView.as_view(),
         name='customer_register'
     ),
 
+
+    # =========================
     # Admin Test API
+    # =========================
+
     path(
         'api/auth/admin-test/',
         AdminTestView.as_view(),
         name='admin_test'
     ),
-        # Forgot Password
+
+
+    # =========================
+    # Forgot Password
+    # =========================
+
     path(
         'api/auth/forgot-password/',
         ForgotPasswordView.as_view(),
         name='forgot_password'
     ),
+
+
+    # =========================
     # Reset Password
+    # =========================
+
     path(
         'api/auth/reset-password/',
         ResetPasswordView.as_view(),
         name='reset_password'
     ),
-    path('api/customers/', include('apps.customers.urls')),
 
-    path('api/technicians/', include('apps.repairs.urls')),
+
+    # =========================
+    # Customer APIs
+    # =========================
+
+    path(
+        'api/customers/',
+        include('apps.customers.urls')
+    ),
+
+
+    # =========================
+    # Repairs APIs
+    # =========================
+
+    path(
+        'api/',
+        include('apps.repairs.urls')
+    ),
 ]
