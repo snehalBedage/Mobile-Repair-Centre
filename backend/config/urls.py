@@ -103,4 +103,5 @@ urlpatterns = [
         'api/',
         include('apps.repairs.urls')
     ),
+    path('api/', include('apps.inventory.urls')),
 ]
