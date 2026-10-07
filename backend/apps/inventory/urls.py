@@ -4,6 +4,8 @@ from .views import (
     SparePartListCreateView,
     SparePartDetailView,
      SparePartAddStockView,
+      JobPartListCreateView,
+    JobPartDetailView,
 )
 
 
@@ -24,6 +26,18 @@ urlpatterns = [
     'spare-parts/<int:pk>/add-stock/',
     SparePartAddStockView.as_view(),
     name='spare-part-add-stock'
+),
+
+    path(
+    'job-parts/',
+    JobPartListCreateView.as_view(),
+    name='job-part-list-create'
+),
+
+path(
+    'job-parts/<int:pk>/',
+    JobPartDetailView.as_view(),
+    name='job-part-detail'
 ),
 
 ]
