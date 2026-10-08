@@ -6,7 +6,7 @@ from apps.reports.audit import create_audit_log
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 
 from .models import Technician, JobCard, StatusHistory, Estimate,Warranty
 
@@ -652,4 +652,43 @@ class WarrantyStatusUpdateView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+# =====================================================
+# Public Job Card Tracking API
+# =====================================================
+
+class PublicJobCardTrackingView(APIView):
+    """
+    Public API for customers to track repair status
+    using the unique tracking token.
+
+    Login is NOT required.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, tracking_token):
+
+        job_card = get_object_or_404(
+            JobCard.objects.select_related(
+                'customer',
+                'device',
+                'technician'
+            ),
+            tracking_token=tracking_token
+        )
+
+        return Response(
+            {
+                'job_card_number': job_card.job_card_number,
+                'device': {
+                    'brand': job_card.device.brand,
+                    'model': job_card.device.model,
+                },
+                'status': job_card.status,
+                'status_display': job_card.get_status_display(),
+                'last_updated': job_card.updated_at,
+            },
+            status=status.HTTP_200_OK
         )

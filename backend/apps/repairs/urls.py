@@ -14,6 +14,7 @@ from .views import (
      WarrantyListCreateView,
     WarrantyDetailView,
     WarrantyStatusUpdateView,
+    PublicJobCardTrackingView,
 )
 
 
@@ -71,6 +72,12 @@ urlpatterns = [
     ),
 
     path(
+    'track/<str:tracking_token>/',
+    PublicJobCardTrackingView.as_view(),
+    name='job-card-public-tracking'
+),
+
+    path(
     'estimates/',
     EstimateListCreateView.as_view(),
     name='estimate-list-create'
@@ -105,5 +112,6 @@ path(
     WarrantyStatusUpdateView.as_view(),
     name='warranty-status-update'
 ),
+
 
 ]
