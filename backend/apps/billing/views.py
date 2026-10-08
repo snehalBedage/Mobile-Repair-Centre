@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -133,6 +134,10 @@ class PaymentListCreateView(APIView):
 
     def get(self, request):
 
+        # =====================================================
+        # GET PAYMENTS - ROLE BASED ACCESS
+        # =====================================================
+
         if request.user.role == 'CUSTOMER':
 
             payments = Payment.objects.filter(
@@ -159,15 +164,54 @@ class PaymentListCreateView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = PaymentSerializer(
+        # =====================================================
+        # SEARCH
+        # =====================================================
+
+        search = request.query_params.get('search')
+
+        if search:
+
+            payments = payments.filter(
+                payment_reference__icontains=search
+            ) | payments.filter(
+                job_card__job_card_number__icontains=search
+            ) | payments.filter(
+                payment_method__icontains=search
+            ) | payments.filter(
+                payment_status__icontains=search
+            )
+
+        # =====================================================
+        # ORDERING
+        # =====================================================
+
+        payments = payments.order_by('-id')
+
+        # =====================================================
+        # PAGINATION
+        # =====================================================
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+
+        paginated_payments = paginator.paginate_queryset(
             payments,
+            request
+        )
+
+        serializer = PaymentSerializer(
+            paginated_payments,
             many=True
         )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
+        return paginator.get_paginated_response(
+            serializer.data
         )
+
+    # =====================================================
+    # CREATE PAYMENT
+    # =====================================================
 
     def post(self, request):
 
@@ -205,12 +249,13 @@ class PaymentListCreateView(APIView):
             payment = serializer.save(
                 payment_status=Payment.PaymentStatus.PAID
             )
+
             create_audit_log(
-    user=request.user,
-    action=f"Payment created - {payment.payment_reference}",
-    table_name="PAYMENTS",
-    record_id=payment.id
-)
+                user=request.user,
+                action=f"Payment created - {payment.payment_reference}",
+                table_name="PAYMENTS",
+                record_id=payment.id
+            )
 
             return Response(
                 PaymentSerializer(payment).data,
@@ -221,7 +266,6 @@ class PaymentListCreateView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-
 
 class PaymentDetailView(APIView):
 

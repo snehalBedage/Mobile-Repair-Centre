@@ -1,12 +1,16 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+
+
 from apps.reports.audit import create_audit_log
 
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.pagination import PageNumberPagination
+
 
 from .models import Technician, JobCard, StatusHistory, Estimate,Warranty
 
@@ -26,6 +30,7 @@ from .permissions import (
     IsAdminOrStaff,
      IsAdminOnly,
     IsAdminStaffOrOwnJobCard,
+     IsAdminStaffOrOwnEstimate,
     IsCustomer,
 )
 
@@ -36,11 +41,27 @@ from .permissions import (
 
 class TechnicianListCreateView(generics.ListCreateAPIView):
 
-    queryset = Technician.objects.all()
-
     serializer_class = TechnicianSerializer
-
     permission_classes = [IsAdminOrStaff]
+
+    def get_queryset(self):
+
+        queryset = Technician.objects.all()
+
+        search = self.request.query_params.get('search')
+
+        if search:
+            queryset = queryset.filter(
+                name__icontains=search
+            ) | queryset.filter(
+                mobile__icontains=search
+            ) | queryset.filter(
+                email__icontains=search
+            ) | queryset.filter(
+                specialization__icontains=search
+            )
+
+        return queryset
 
 # =========================================================
 # Technician Status Update API
@@ -107,6 +128,32 @@ class TechnicianDetailView(generics.RetrieveUpdateAPIView):
 # Job Card APIs
 # =========================================================
 
+
+
+
+class JobCardDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = JobCardSerializer
+    permission_classes = [IsAdminStaffOrOwnJobCard]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role in ['ADMIN', 'STAFF']:
+            return JobCard.objects.select_related(
+                'customer',
+                'customer__user',
+                'device',
+                'technician'
+            ).all()
+
+        return JobCard.objects.filter(
+            customer__user=user
+        ).select_related(
+            'customer',
+            'customer__user',
+            'device',
+            'technician'
+        )
 class JobCardListCreateView(generics.ListCreateAPIView):
 
     serializer_class = JobCardSerializer
@@ -115,74 +162,68 @@ class JobCardListCreateView(generics.ListCreateAPIView):
 
         user = self.request.user
 
-        # ADMIN and STAFF
+        # =====================================================
+        # ADMIN / STAFF
+        # =====================================================
+
         if user.role in ['ADMIN', 'STAFF']:
 
-            return JobCard.objects.select_related(
+            queryset = JobCard.objects.select_related(
                 'customer',
                 'customer__user',
                 'device',
                 'technician'
             ).all()
 
+        # =====================================================
         # CUSTOMER
-        return JobCard.objects.filter(
-            customer__user=user
-        ).select_related(
-            'customer',
-            'customer__user',
-            'device',
-            'technician'
-        )
+        # =====================================================
+
+        else:
+
+            queryset = JobCard.objects.filter(
+                customer__user=user
+            ).select_related(
+                'customer',
+                'customer__user',
+                'device',
+                'technician'
+            )
+
+        # =====================================================
+        # SEARCH
+        # =====================================================
+
+        search = self.request.query_params.get('search')
+
+        if search:
+
+            queryset = queryset.filter(
+                job_card_number__icontains=search
+            ) | queryset.filter(
+                customer__name__icontains=search
+            ) | queryset.filter(
+                device__brand__icontains=search
+            ) | queryset.filter(
+                device__model__icontains=search
+            ) | queryset.filter(
+                status__icontains=search
+            ) | queryset.filter(
+                priority__icontains=search
+            )
+
+        return queryset
+
+    # =====================================================
+    # PERMISSIONS
+    # =====================================================
 
     def get_permissions(self):
 
-        # Only ADMIN and STAFF can create Job Cards
         if self.request.method == 'POST':
+            return [IsAdminOrStaff()]
 
-            return [
-                IsAdminOrStaff()
-            ]
-
-        # GET can be used by ADMIN, STAFF and CUSTOMER
-        return [
-            IsAdminStaffOrOwnJobCard()
-        ]
-
-
-class JobCardDetailView(generics.RetrieveUpdateAPIView):
-
-    serializer_class = JobCardSerializer
-
-    permission_classes = [
-        IsAdminStaffOrOwnJobCard
-    ]
-
-    def get_queryset(self):
-
-        user = self.request.user
-
-        # ADMIN and STAFF
-        if user.role in ['ADMIN', 'STAFF']:
-
-            return JobCard.objects.select_related(
-                'customer',
-                'customer__user',
-                'device',
-                'technician'
-            ).all()
-
-        # CUSTOMER
-        return JobCard.objects.filter(
-            customer__user=user
-        ).select_related(
-            'customer',
-            'customer__user',
-            'device',
-            'technician'
-        )
-
-
+        return [IsAdminStaffOrOwnJobCard()]
 # =========================================================
 # Job Card Status Update API
 # =========================================================
@@ -353,22 +394,59 @@ class EstimateListCreateView(generics.ListCreateAPIView):
 
         user = self.request.user
 
+        # =====================================================
+        # ADMIN / STAFF
+        # =====================================================
+
         if user.role in ['ADMIN', 'STAFF']:
-            return Estimate.objects.select_related(
+
+            queryset = Estimate.objects.select_related(
                 'job_card',
                 'job_card__customer',
                 'job_card__device',
                 'approved_by'
             ).all()
 
-        return Estimate.objects.filter(
-            job_card__customer__user=user
-        ).select_related(
-            'job_card',
-            'job_card__customer',
-            'job_card__device',
-            'approved_by'
-        )
+        # =====================================================
+        # CUSTOMER
+        # =====================================================
+
+        else:
+
+            queryset = Estimate.objects.filter(
+                job_card__customer__user=user
+            ).select_related(
+                'job_card',
+                'job_card__customer',
+                'job_card__device',
+                'approved_by'
+            )
+
+        # =====================================================
+        # SEARCH
+        # =====================================================
+
+        search = self.request.query_params.get('search')
+
+        if search:
+
+            queryset = queryset.filter(
+                job_card__job_card_number__icontains=search
+            ) | queryset.filter(
+                job_card__customer__name__icontains=search
+            ) | queryset.filter(
+                job_card__device__brand__icontains=search
+            ) | queryset.filter(
+                job_card__device__model__icontains=search
+            ) | queryset.filter(
+                approval_status__icontains=search
+            )
+
+        return queryset
+
+    # =====================================================
+    # PERMISSIONS
+    # =====================================================
 
     def get_permissions(self):
 
@@ -376,12 +454,11 @@ class EstimateListCreateView(generics.ListCreateAPIView):
             return [IsAdminOrStaff()]
 
         return [IsAdminStaffOrOwnJobCard()]
-
 # Estimate Detail View
 class EstimateDetailView(generics.RetrieveUpdateAPIView):
 
     serializer_class = EstimateSerializer
-    permission_classes = [IsAdminStaffOrOwnJobCard]
+    permission_classes = [IsAdminStaffOrOwnEstimate]
 
     def get_queryset(self):
 
@@ -512,14 +589,53 @@ class WarrantyListCreateView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = WarrantySerializer(
+        # ==============================
+        # SEARCH
+        # ==============================
+
+        search = request.query_params.get('search')
+
+        if search:
+
+            warranties = warranties.filter(
+                warranty_number__icontains=search
+            ) | warranties.filter(
+                job_card__job_card_number__icontains=search
+            ) | warranties.filter(
+                job_card__customer__name__icontains=search
+            ) | warranties.filter(
+                job_card__device__brand__icontains=search
+            ) | warranties.filter(
+                job_card__device__model__icontains=search
+            ) | warranties.filter(
+                status__icontains=search
+            )
+
+        # ==============================
+        # ORDERING
+        # ==============================
+
+        warranties = warranties.order_by('-id')
+
+        # ==============================
+        # PAGINATION
+        # ==============================
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+
+        paginated_warranties = paginator.paginate_queryset(
             warranties,
+            request
+        )
+
+        serializer = WarrantySerializer(
+            paginated_warranties,
             many=True
         )
 
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
+        return paginator.get_paginated_response(
+            serializer.data
         )
 
     def post(self, request):
@@ -552,7 +668,6 @@ class WarrantyListCreateView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-
 
 class WarrantyDetailView(APIView):
 
@@ -692,3 +807,4 @@ class PublicJobCardTrackingView(APIView):
             },
             status=status.HTTP_200_OK
         )
+

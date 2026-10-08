@@ -15,6 +15,7 @@ from .views import (
     WarrantyDetailView,
     WarrantyStatusUpdateView,
     PublicJobCardTrackingView,
+    
 )
 
 
@@ -112,6 +113,8 @@ path(
     WarrantyStatusUpdateView.as_view(),
     name='warranty-status-update'
 ),
+
+
 
 
 ]

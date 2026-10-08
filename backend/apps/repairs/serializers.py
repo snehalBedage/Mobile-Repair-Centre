@@ -94,7 +94,7 @@ class JobCardSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-
+    
     def validate(self, attrs):
 
         customer = attrs.get('customer')
@@ -157,7 +157,7 @@ class JobCardSerializer(serializers.ModelSerializer):
 
         if diagnosis is not None:
 
-            if diagnosis and not diagnosis.strip():
+            if  not diagnosis.strip():
 
                 raise serializers.ValidationError({
                     'diagnosis': (

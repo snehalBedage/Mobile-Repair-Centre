@@ -13,12 +13,30 @@ from .serializers import (
 
 from apps.repairs.permissions import IsAdminOrStaff
 
-
 class SparePartListCreateView(generics.ListCreateAPIView):
 
-    queryset = SparePart.objects.all().order_by('-id')
     serializer_class = SparePartSerializer
     permission_classes = [IsAdminOrStaff]
+
+    def get_queryset(self):
+
+        queryset = SparePart.objects.all().order_by('-id')
+
+        # =====================================================
+        # SEARCH
+        # =====================================================
+
+        search = self.request.query_params.get('search')
+
+        if search:
+
+            queryset = queryset.filter(
+                part_name__icontains=search
+            ) | queryset.filter(
+                part_code__icontains=search
+            )
+
+        return queryset
 
 
 class SparePartDetailView(generics.RetrieveUpdateAPIView):
@@ -67,10 +85,32 @@ class JobPartListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
 
-        return JobPart.objects.select_related(
+        queryset = JobPart.objects.select_related(
             'job_card',
             'spare_part'
         ).all().order_by('-id')
+
+        # =====================================================
+        # SEARCH
+        # =====================================================
+
+        search = self.request.query_params.get('search')
+
+        if search:
+
+            queryset = queryset.filter(
+                job_card__job_card_number__icontains=search
+            ) | queryset.filter(
+                spare_part__part_name__icontains=search
+            ) | queryset.filter(
+                spare_part__part_code__icontains=search
+            )
+
+        return queryset
+
+    # =====================================================
+    # CREATE JOB PART
+    # =====================================================
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -124,8 +164,6 @@ class JobPartListCreateView(generics.ListCreateAPIView):
             unit_price=unit_price,
             total_price=total_price
         )
-
-
 class JobPartDetailView(
     generics.RetrieveUpdateDestroyAPIView
 ):

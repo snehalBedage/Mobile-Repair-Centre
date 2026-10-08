@@ -7,6 +7,7 @@ from apps.accounts.views import (
     CustomerRegistrationView,
     ForgotPasswordView,
     ResetPasswordView,
+     CurrentUserView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -109,4 +110,10 @@ urlpatterns = [
     path('api/billing/', include('apps.billing.urls')),
 
     path('api/', include('apps.reports.urls')),
+
+    path(
+    'api/auth/me/',
+    CurrentUserView.as_view(),
+    name='current_user'
+),
 ]

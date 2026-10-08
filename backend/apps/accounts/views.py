@@ -3,6 +3,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
+from rest_framework.permissions import IsAuthenticated
 
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -193,4 +194,28 @@ class ResetPasswordView(APIView):
 
         return Response({
             "message": "Password reset successful. You can now login with your new password."
+        }, status=status.HTTP_200_OK)
+
+class CurrentUserView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        return Response({
+            "id": request.user.id,
+            "name": request.user.name,
+            "email": request.user.email,
+            "role": request.user.role,
+            "is_active": request.user.is_active
+        }, status=status.HTTP_200_OK)
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "id": request.user.id,
+            "name": request.user.name,
+            "email": request.user.email,
+            "role": request.user.role,
+            "is_active": request.user.is_active
         }, status=status.HTTP_200_OK)

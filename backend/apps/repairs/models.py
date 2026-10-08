@@ -41,18 +41,32 @@ class Technician(models.Model):
 class JobCard(models.Model):
 
     class Status(models.TextChoices):
-        RECEIVED = 'RECEIVED', 'Received'
-        DIAGNOSIS = 'DIAGNOSIS', 'Diagnosis'
-        ESTIMATE_PREPARED = 'ESTIMATE_PREPARED', 'Estimate Prepared'
-        WAITING_FOR_APPROVAL = 'WAITING_FOR_APPROVAL', 'Waiting for Approval'
-        APPROVED = 'APPROVED', 'Approved'
-        REJECTED = 'REJECTED', 'Rejected'
-        REPAIR_IN_PROGRESS = 'REPAIR_IN_PROGRESS', 'Repair in Progress'
-        REPAIR_REQUIRED = 'REPAIR_REQUIRED', 'Repair Required'
-        READY_FOR_DELIVERY = 'READY_FOR_DELIVERY', 'Ready for Delivery'
-        COMPLETED = 'COMPLETED', 'Completed'
-        CANCELLED = 'CANCELLED', 'Cancelled'
 
+        RECEIVED = 'RECEIVED', 'Received'
+
+        DIAGNOSIS = 'DIAGNOSIS', 'Diagnosis'
+
+        ESTIMATE_PREPARED = 'ESTIMATE_PREPARED', 'Estimate Prepared'
+
+        WAITING_FOR_APPROVAL = 'WAITING_FOR_APPROVAL', 'Waiting for Approval'
+
+        APPROVED = 'APPROVED', 'Approved'
+
+        REJECTED = 'REJECTED', 'Rejected'
+
+        REPAIR_IN_PROGRESS = 'REPAIR_IN_PROGRESS', 'Repair in Progress'
+
+        QC = 'QC', 'Quality Check'
+
+        QC_FAILED = 'QC_FAILED', 'QC Failed'
+
+        REPAIR_REQUIRED = 'REPAIR_REQUIRED', 'Repair Required'
+
+        READY_FOR_DELIVERY = 'READY_FOR_DELIVERY', 'Ready for Delivery'
+
+        COMPLETED = 'COMPLETED', 'Completed'
+
+        CANCELLED = 'CANCELLED', 'Cancelled'
     class Priority(models.TextChoices):
         LOW = 'LOW', 'Low'
         MEDIUM = 'MEDIUM', 'Medium'
