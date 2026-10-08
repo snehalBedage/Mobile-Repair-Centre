@@ -11,6 +11,9 @@ from .views import (
     EstimateListCreateView,
     EstimateDetailView,
     EstimateApprovalView,
+     WarrantyListCreateView,
+    WarrantyDetailView,
+    WarrantyStatusUpdateView,
 )
 
 
@@ -83,6 +86,24 @@ path(
     'estimates/<int:pk>/approval/',
     EstimateApprovalView.as_view(),
     name='estimate-approval'
+),
+
+path(
+    'warranties/',
+    WarrantyListCreateView.as_view(),
+    name='warranty-list-create'
+),
+
+path(
+    'warranties/<int:pk>/',
+    WarrantyDetailView.as_view(),
+    name='warranty-detail'
+),
+
+path(
+    'warranties/<int:pk>/status/',
+    WarrantyStatusUpdateView.as_view(),
+    name='warranty-status-update'
 ),
 
 ]

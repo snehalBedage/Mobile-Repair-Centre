@@ -107,4 +107,6 @@ urlpatterns = [
 
 
     path('api/billing/', include('apps.billing.urls')),
+
+    path('api/', include('apps.reports.urls')),
 ]

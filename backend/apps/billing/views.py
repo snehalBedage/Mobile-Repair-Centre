@@ -25,6 +25,7 @@ from reportlab.platypus import (
 from apps.repairs.models import JobCard
 from .models import Payment
 from .serializers import PaymentSerializer
+from apps.reports.audit import create_audit_log
 
 
 class BillingSummaryView(APIView):
@@ -204,6 +205,12 @@ class PaymentListCreateView(APIView):
             payment = serializer.save(
                 payment_status=Payment.PaymentStatus.PAID
             )
+            create_audit_log(
+    user=request.user,
+    action=f"Payment created - {payment.payment_reference}",
+    table_name="PAYMENTS",
+    record_id=payment.id
+)
 
             return Response(
                 PaymentSerializer(payment).data,
@@ -758,3 +765,4 @@ class PaymentReceiptView(APIView):
         document.build(story)
 
         return response
+

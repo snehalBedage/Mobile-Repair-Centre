@@ -1,10 +1,14 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from apps.reports.audit import create_audit_log
+
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
-from .models import Technician, JobCard, StatusHistory, Estimate
+from .models import Technician, JobCard, StatusHistory, Estimate,Warranty
 
 from .serializers import (
     TechnicianSerializer,
@@ -14,6 +18,8 @@ from .serializers import (
     StatusHistorySerializer,
     EstimateSerializer,
 EstimateApprovalSerializer,
+    WarrantySerializer,
+    WarrantyStatusSerializer,
 )
 
 from .permissions import (
@@ -248,6 +254,13 @@ class JobCardStatusUpdateView(generics.UpdateAPIView):
 
         job_card.save()
 
+        create_audit_log(
+    user=request.user,
+    action=f"Job Card status changed to {new_status}",
+    table_name="JOB_CARDS",
+    record_id=job_card.id
+)
+
         # -------------------------------------------------
         # Create Status History
         # -------------------------------------------------
@@ -461,4 +474,182 @@ class EstimateApprovalView(generics.UpdateAPIView):
                 'status_history_created': True
             },
             status=status.HTTP_200_OK
+        )
+
+class WarrantyListCreateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        if request.user.role == 'CUSTOMER':
+
+            warranties = Warranty.objects.filter(
+                job_card__customer__user=request.user
+            ).select_related(
+                'job_card',
+                'job_card__customer',
+                'job_card__device'
+            )
+
+        elif request.user.role in ['ADMIN', 'STAFF']:
+
+            warranties = Warranty.objects.all().select_related(
+                'job_card',
+                'job_card__customer',
+                'job_card__device'
+            )
+
+        else:
+
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to view warranties."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = WarrantySerializer(
+            warranties,
+            many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+    def post(self, request):
+
+        if request.user.role not in ['ADMIN', 'STAFF']:
+
+            return Response(
+                {
+                    "detail": (
+                        "Only Admin or Staff can create warranties."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = WarrantySerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            warranty = serializer.save()
+
+            return Response(
+                WarrantySerializer(warranty).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class WarrantyDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+
+        return get_object_or_404(
+            Warranty.objects.select_related(
+                'job_card',
+                'job_card__customer',
+                'job_card__device'
+            ),
+            id=pk
+        )
+
+    def get(self, request, pk):
+
+        warranty = self.get_object(pk)
+
+        if request.user.role == 'CUSTOMER':
+
+            if warranty.job_card.customer.user != request.user:
+
+                return Response(
+                    {
+                        "detail": (
+                            "You do not have permission "
+                            "to view this warranty."
+                        )
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        elif request.user.role not in ['ADMIN', 'STAFF']:
+
+            return Response(
+                {
+                    "detail": (
+                        "You do not have permission "
+                        "to view this warranty."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = WarrantySerializer(warranty)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+
+class WarrantyStatusUpdateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+
+        if request.user.role != 'ADMIN':
+
+            return Response(
+                {
+                    "detail": (
+                        "Only Admin can update warranty status."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        warranty = get_object_or_404(
+            Warranty,
+            id=pk
+        )
+
+        serializer = WarrantyStatusSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            warranty.status = serializer.validated_data['status']
+
+            warranty.save(
+                update_fields=[
+                    'status',
+                    'updated_at'
+                ]
+            )
+
+            return Response(
+                WarrantySerializer(warranty).data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
         )

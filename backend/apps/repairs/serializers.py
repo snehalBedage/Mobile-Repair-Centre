@@ -2,7 +2,7 @@ from django.utils import timezone
 
 from rest_framework import serializers
 
-from .models import Technician, JobCard, StatusHistory,Estimate
+from .models import Technician, JobCard, StatusHistory,Estimate,Warranty
 
 
 # =========================================================
@@ -403,3 +403,102 @@ class EstimateApprovalSerializer(serializers.Serializer):
     def validate_remarks(self, value):
         return value.strip()
 
+class WarrantySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Warranty
+
+        fields = [
+            'id',
+            'job_card',
+            'warranty_number',
+            'start_date',
+            'end_date',
+            'warranty_terms',
+            'status',
+            'created_at',
+            'updated_at',
+        ]
+
+        read_only_fields = [
+            'id',
+            'warranty_number',
+            'status',
+            'created_at',
+            'updated_at',
+        ]
+
+    def validate_job_card(self, value):
+
+        if value.status != JobCard.Status.COMPLETED:
+            raise serializers.ValidationError(
+                "Warranty can be created only for a completed Job Card."
+            )
+
+        if hasattr(value, 'warranty'):
+            raise serializers.ValidationError(
+                "Warranty already exists for this Job Card."
+            )
+
+        return value
+
+    def validate_start_date(self, value):
+
+        return value
+
+    def validate_end_date(self, value):
+
+        start_date = self.initial_data.get('start_date')
+
+        if start_date:
+            from datetime import date
+
+            try:
+                parsed_start_date = date.fromisoformat(start_date)
+            except ValueError:
+                return value
+
+            if value < parsed_start_date:
+                raise serializers.ValidationError(
+                    "End date cannot be before start date."
+                )
+
+        return value
+
+    def validate_warranty_terms(self, value):
+
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                "Warranty terms cannot be empty."
+            )
+
+        return value
+
+    def create(self, validated_data):
+
+        import uuid
+
+        last_warranty = Warranty.objects.order_by('-id').first()
+
+        next_number = (
+            last_warranty.id + 1
+            if last_warranty
+            else 1
+        )
+
+        warranty_number = f"WR{next_number:05d}"
+
+        return Warranty.objects.create(
+            warranty_number=warranty_number,
+            status=Warranty.Status.ACTIVE,
+            **validated_data
+        )
+
+
+class WarrantyStatusSerializer(serializers.Serializer):
+
+    status = serializers.ChoiceField(
+        choices=Warranty.Status.choices
+    )
