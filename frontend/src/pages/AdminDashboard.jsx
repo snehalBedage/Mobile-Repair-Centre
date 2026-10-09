@@ -1,8 +1,7 @@
-import DashboardLayout from "../layouts/DashboardLayout";
 
 function AdminDashboard() {
   return (
-    <DashboardLayout role="ADMIN">
+    <>
 
       {/* Page Subtitle */}
       <div className="mb-6">
@@ -17,7 +16,6 @@ function AdminDashboard() {
 
         {/* Total Customers */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5 flex items-center justify-between">
 
@@ -71,7 +69,6 @@ function AdminDashboard() {
 
         {/* Active Job Cards */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5 flex items-center justify-between">
 
@@ -111,7 +108,6 @@ function AdminDashboard() {
 
         {/* Pending Estimates */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5 flex items-center justify-between">
 
@@ -157,7 +153,6 @@ function AdminDashboard() {
 
         {/* Low Stock Parts */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5 flex items-center justify-between">
 
@@ -216,8 +211,6 @@ function AdminDashboard() {
         {/* Repair Status */}
         <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="h-1 bg-blue-700"></div>
-
           <div className="px-5 py-4 border-b border-slate-200">
 
             <h3 className="text-sm font-bold text-slate-900">
@@ -274,8 +267,6 @@ function AdminDashboard() {
 
         {/* Today's Payments */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="px-5 py-4 border-b border-slate-200">
 
@@ -347,8 +338,6 @@ function AdminDashboard() {
       {/* ================= RECENT JOB CARDS ================= */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm mt-5 overflow-hidden">
 
-        <div className="h-1 bg-blue-700"></div>
-
         <div className="px-5 py-4 border-b border-slate-200">
 
           <h3 className="text-sm font-bold text-slate-900">
@@ -368,7 +357,7 @@ function AdminDashboard() {
 
             <thead>
 
-              <tr className="bg-slate-50 border-b border-slate-200">
+              <tr className="bg-slate-900 border-b border-slate-800">
 
                 {[
                   "Job Card",
@@ -381,7 +370,7 @@ function AdminDashboard() {
 
                   <th
                     key={item}
-                    className="text-left px-5 py-3 text-xs font-semibold text-slate-600"
+                    className="text-left px-5 py-3 text-xs font-semibold text-white"
                   >
                     {item}
                   </th>
@@ -451,8 +440,9 @@ function AdminDashboard() {
 
       </div>
 
-    </DashboardLayout>
+    </>
   );
 }
 
 export default AdminDashboard;
+

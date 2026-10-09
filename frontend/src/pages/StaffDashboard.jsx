@@ -1,12 +1,15 @@
-import DashboardLayout from "../layouts/DashboardLayout";
 
 function StaffDashboard() {
   return (
-    <DashboardLayout role="STAFF">
+      <>
 
-      {/* Page Subtitle */}
+      {/* Page Heading */}
       <div className="mb-6">
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-900">
+          Dashboard
+        </h1>
+
+        <p className="text-sm text-slate-500 mt-1">
           Overview of today's repair centre activities.
         </p>
       </div>
@@ -17,9 +20,9 @@ function StaffDashboard() {
 
         {/* Total Customers */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
+
             <p className="text-sm font-medium text-slate-500">
               Total Customers
             </p>
@@ -31,15 +34,17 @@ function StaffDashboard() {
             <p className="text-xs text-slate-400 mt-1">
               Registered customers
             </p>
+
           </div>
+
         </div>
 
 
         {/* Active Job Cards */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
+
             <p className="text-sm font-medium text-slate-500">
               Active Job Cards
             </p>
@@ -51,15 +56,17 @@ function StaffDashboard() {
             <p className="text-xs text-slate-400 mt-1">
               Currently active repairs
             </p>
+
           </div>
+
         </div>
 
 
         {/* Pending Estimates */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
+
             <p className="text-sm font-medium text-slate-500">
               Pending Estimates
             </p>
@@ -71,15 +78,17 @@ function StaffDashboard() {
             <p className="text-xs text-slate-400 mt-1">
               Awaiting customer approval
             </p>
+
           </div>
+
         </div>
 
 
         {/* Low Stock Parts */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
+
             <p className="text-sm font-medium text-slate-500">
               Low Stock Parts
             </p>
@@ -91,7 +100,9 @@ function StaffDashboard() {
             <p className="text-xs text-slate-400 mt-1">
               Parts needing attention
             </p>
+
           </div>
+
         </div>
 
       </div>
@@ -102,8 +113,6 @@ function StaffDashboard() {
 
         {/* Repair Status */}
         <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="px-5 py-4 border-b border-slate-200">
 
@@ -162,8 +171,6 @@ function StaffDashboard() {
         {/* Today's Payments */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="h-1 bg-blue-700"></div>
-
           <div className="px-5 py-4 border-b border-slate-200">
 
             <h3 className="text-sm font-bold text-slate-900">
@@ -209,8 +216,6 @@ function StaffDashboard() {
       {/* ================= RECENT JOB CARDS ================= */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm mt-5 overflow-hidden">
 
-        <div className="h-1 bg-blue-700"></div>
-
         <div className="px-5 py-4 border-b border-slate-200">
 
           <h3 className="text-sm font-bold text-slate-900">
@@ -230,7 +235,7 @@ function StaffDashboard() {
 
             <thead>
 
-              <tr className="bg-slate-50 border-b border-slate-200">
+              <tr className="bg-slate-900 border-b border-slate-800">
 
                 {[
                   "Job Card",
@@ -243,7 +248,7 @@ function StaffDashboard() {
 
                   <th
                     key={item}
-                    className="text-left px-5 py-3 text-xs font-semibold text-slate-600"
+                    className="text-left px-5 py-3 text-xs font-semibold text-white"
                   >
                     {item}
                   </th>
@@ -284,7 +289,7 @@ function StaffDashboard() {
 
       </div>
 
-    </DashboardLayout>
+  </>
   );
 }
 

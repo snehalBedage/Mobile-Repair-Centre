@@ -1,12 +1,16 @@
-import DashboardLayout from "../layouts/DashboardLayout";
+
 
 function CustomerDashboard() {
   return (
-    <DashboardLayout role="CUSTOMER">
+    <>
 
-      {/* Page Subtitle */}
+      {/* Page Heading */}
       <div className="mb-6">
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-900">
+          Dashboard
+        </h1>
+
+        <p className="text-sm text-slate-500 mt-1">
           Overview of your devices and repair activities.
         </p>
       </div>
@@ -17,8 +21,6 @@ function CustomerDashboard() {
 
         {/* My Devices */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
 
@@ -42,8 +44,6 @@ function CustomerDashboard() {
         {/* Active Repairs */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="h-1 bg-blue-700"></div>
-
           <div className="p-5">
 
             <p className="text-sm font-medium text-slate-500">
@@ -66,8 +66,6 @@ function CustomerDashboard() {
         {/* Pending Estimates */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="h-1 bg-blue-700"></div>
-
           <div className="p-5">
 
             <p className="text-sm font-medium text-slate-500">
@@ -89,8 +87,6 @@ function CustomerDashboard() {
 
         {/* Completed Repairs */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="p-5">
 
@@ -118,8 +114,6 @@ function CustomerDashboard() {
 
         {/* Repair Status */}
         <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-          <div className="h-1 bg-blue-700"></div>
 
           <div className="px-5 py-4 border-b border-slate-200">
 
@@ -178,8 +172,6 @@ function CustomerDashboard() {
         {/* Payment Summary */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="h-1 bg-blue-700"></div>
-
           <div className="px-5 py-4 border-b border-slate-200">
 
             <h3 className="text-sm font-bold text-slate-900">
@@ -225,8 +217,6 @@ function CustomerDashboard() {
       {/* ================= RECENT REPAIRS ================= */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm mt-5 overflow-hidden">
 
-        <div className="h-1 bg-blue-700"></div>
-
         <div className="px-5 py-4 border-b border-slate-200">
 
           <h3 className="text-sm font-bold text-slate-900">
@@ -246,21 +236,21 @@ function CustomerDashboard() {
 
             <thead>
 
-              <tr className="bg-slate-50 border-b border-slate-200">
+              <tr className="bg-slate-900 border-b border-slate-800">
 
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-600">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white">
                   Job Card
                 </th>
 
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-600">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white">
                   Device
                 </th>
 
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-600">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white">
                   Status
                 </th>
 
-                <th className="text-left px-5 py-3 text-xs font-semibold text-slate-600">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-white">
                   Date
                 </th>
 
@@ -298,7 +288,7 @@ function CustomerDashboard() {
 
       </div>
 
-    </DashboardLayout>
+    </>
   );
 }
 

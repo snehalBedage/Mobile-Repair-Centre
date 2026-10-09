@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function DashboardLayout({ children, role }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const name = localStorage.getItem("user_name") || "User";
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -15,8 +20,12 @@ function DashboardLayout({ children, role }) {
     localStorage.removeItem("user_name");
     localStorage.removeItem("user_email");
 
-    navigate("/");
+    navigate("/login");
   };
+
+  // =====================================================
+  // ROLE-WISE MENUS
+  // =====================================================
 
   const adminMenu = [
     "Dashboard",
@@ -26,12 +35,12 @@ function DashboardLayout({ children, role }) {
     "Job Cards",
     "Estimates",
     "Spare Parts",
+    "Job Parts",
     "Payments",
-    "Warranty",
+    "Warranties",
     "Reports",
     "Users & Roles",
     "Audit Logs",
-    "Settings",
   ];
 
   const staffMenu = [
@@ -42,18 +51,18 @@ function DashboardLayout({ children, role }) {
     "Job Cards",
     "Estimates",
     "Spare Parts",
+    "Job Parts",
     "Payments",
-    "Warranty",
-    "Settings",
+    "Warranties",
   ];
 
   const customerMenu = [
     "Dashboard",
-    "Devices",
-    "Repairs",
-    "Estimates",
-    "Payments",
-    "Warranty",
+    "My Devices",
+    "My Repairs",
+    "My Estimates",
+    "My Payments",
+    "My Warranties",
     "Track Repair",
   ];
 
@@ -64,20 +73,152 @@ function DashboardLayout({ children, role }) {
       ? staffMenu
       : customerMenu;
 
+  // =====================================================
+  // MENU ROUTES
+  // =====================================================
+
+  const menuRoutes = {
+    Dashboard: {
+      ADMIN: "/admin-dashboard",
+      STAFF: "/staff-dashboard",
+      CUSTOMER: "/customer-dashboard",
+    },
+
+    Customers: "/customers",
+    Devices: "/devices",
+    Technicians: "/technicians",
+    "Job Cards": "/job-cards",
+    Estimates: "/estimates",
+    "Spare Parts": "/spare-parts",
+    "Job Parts": "/job-parts",
+    Payments: "/payments",
+    Warranties: "/warranties",
+    Reports: "/reports",
+    "Users & Roles": "/users-roles",
+    "Audit Logs": "/audit-logs",
+
+    "My Devices": "/my-devices",
+    "My Repairs": "/my-repairs",
+    "My Estimates": "/my-estimates",
+    "My Payments": "/my-payments",
+    "My Warranties": "/my-warranties",
+    "Track Repair": "/track-repair",
+  };
+
+  // =====================================================
+  // GET ROUTE FOR MENU ITEM
+  // =====================================================
+
+  const getMenuRoute = (item) => {
+    if (item === "Dashboard") {
+      return menuRoutes.Dashboard[role];
+    }
+
+    return menuRoutes[item];
+  };
+
+  // =====================================================
+  // PAGE TITLE
+  // =====================================================
+
+  const getPageTitle = () => {
+    const currentPath = location.pathname;
+
+    if (
+      currentPath === "/admin-dashboard" ||
+      currentPath === "/staff-dashboard" ||
+      currentPath === "/customer-dashboard"
+    ) {
+      return "Dashboard";
+    }
+
+    const pageTitles = {
+      "/customers": "Customers",
+      "/devices": "Devices",
+      "/technicians": "Technicians",
+      "/job-cards": "Job Cards",
+      "/estimates": "Estimates",
+      "/spare-parts": "Spare Parts",
+      "/job-parts": "Job Parts",
+      "/payments": "Payments",
+      "/warranties": "Warranties",
+      "/reports": "Reports",
+      "/users-roles": "Users & Roles",
+      "/audit-logs": "Audit Logs",
+
+      "/my-devices": "My Devices",
+      "/my-repairs": "My Repairs",
+      "/my-estimates": "My Estimates",
+      "/my-payments": "My Payments",
+      "/my-warranties": "My Warranties",
+      "/track-repair": "Track Repair",
+    };
+
+    return pageTitles[currentPath] || "Dashboard";
+  };
+
+  // =====================================================
+  // ACTIVE MENU
+  // =====================================================
+
+  const isActive = (item) => {
+    const route = getMenuRoute(item);
+
+    return route === location.pathname;
+  };
+
+  // =====================================================
+  // ICONS
+  // =====================================================
+
+  const getIcon = (item) => {
+    const icons = {
+      Dashboard: "▦",
+      Customers: "♙",
+      Devices: "▯",
+      Technicians: "⚒",
+      "Job Cards": "▤",
+      Estimates: "▥",
+      "Spare Parts": "◇",
+      "Job Parts": "◈",
+      Payments: "▭",
+      Warranties: "✓",
+      Reports: "▥",
+      "Users & Roles": "♙",
+      "Audit Logs": "☷",
+
+      "My Devices": "▯",
+      "My Repairs": "⚒",
+      "My Estimates": "▥",
+      "My Payments": "▭",
+      "My Warranties": "✓",
+      "Track Repair": "⌖",
+    };
+
+    return icons[item] || "•";
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
+
   return (
     <div className="min-h-screen bg-slate-100">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
 
-      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900 text-white flex flex-col z-40">
+      <aside className="fixed left-0 top-0 bottom-0 z-40 flex w-64 flex-col bg-slate-900 text-white">
 
-        {/* Logo */}
-        <div className="h-20 px-5 flex items-center border-b border-slate-800 shrink-0">
+        {/* ================= LOGO ================= */}
 
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center mr-3">
+        <div className="flex h-20 shrink-0 items-center border-b border-slate-800 px-5">
+
+          <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
 
             <svg
-              className="w-5 h-5 text-white"
+              className="h-5 w-5 text-white"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -109,11 +250,11 @@ function DashboardLayout({ children, role }) {
 
           <div className="min-w-0">
 
-            <h1 className="text-sm font-bold text-white truncate">
+            <h1 className="truncate text-sm font-bold text-white">
               Mobile Repair Centre
             </h1>
 
-            <p className="text-[10px] text-slate-400 mt-0.5">
+            <p className="mt-0.5 text-[10px] text-slate-400">
               Repair Management System
             </p>
 
@@ -121,71 +262,66 @@ function DashboardLayout({ children, role }) {
 
         </div>
 
+        {/* ================= MENU ================= */}
 
-        {/* ================= SCROLLABLE SIDEBAR MENU ================= */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
 
-        <nav className="flex-1 px-3 py-3 overflow-y-auto">
-
-          <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Main Menu
           </p>
 
           <div className="space-y-0.5">
 
-            {menu.map((item) => (
+            {menu.map((item) => {
 
-              <button
-                key={item}
-                className={`w-full flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150 ${
-                  item === "Dashboard"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                }`}
-              >
+              const active = isActive(item);
 
-                <span className="w-7 h-7 flex items-center justify-center mr-2.5 text-sm">
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    const route = getMenuRoute(item);
 
-                  {item === "Dashboard" && "▦"}
-                  {item === "Customers" && "♙"}
-                  {item === "Devices" && "▯"}
-                  {item === "Technicians" && "⚒"}
-                  {item === "Job Cards" && "▤"}
-                  {item === "Estimates" && "▥"}
-                  {item === "Spare Parts" && "◇"}
-                  {item === "Payments" && "▭"}
-                  {item === "Warranty" && "✓"}
-                  {item === "Reports" && "▥"}
-                  {item === "Users & Roles" && "♙"}
-                  {item === "Audit Logs" && "☷"}
-                  {item === "Settings" && "⚙"}
-                  {item === "Repairs" && "⚒"}
-                  {item === "Track Repair" && "⌖"}
+                    if (route) {
+                      navigate(route);
+                    }
+                  }}
+                  className={`flex w-full items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${
+                    active
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
 
-                </span>
+                  <span className="mr-2.5 flex h-7 w-7 items-center justify-center text-sm">
+                    {getIcon(item)}
+                  </span>
 
-                <span className="truncate">
-                  {item}
-                </span>
+                  <span className="truncate">
+                    {item}
+                  </span>
 
-              </button>
+                </button>
+              );
 
-            ))}
+            })}
 
           </div>
 
         </nav>
 
-
         {/* ================= LOGOUT ================= */}
 
-        <div className="px-3 py-3 border-t border-slate-800 shrink-0">
+        <div className="shrink-0 border-t border-slate-800 px-3 py-3">
 
           <button
+            type="button"
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-red-600 hover:text-white transition-colors duration-150"
+            className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors duration-150 hover:bg-red-600 hover:text-white"
           >
 
-            <span className="w-7 h-7 flex items-center justify-center mr-2.5">
+            <span className="mr-2.5 flex h-7 w-7 items-center justify-center">
               ⇥
             </span>
 
@@ -197,32 +333,33 @@ function DashboardLayout({ children, role }) {
 
       </aside>
 
+      {/* =====================================================
+          RIGHT SIDE
+      ===================================================== */}
 
-      {/* ================= RIGHT SIDE ================= */}
-
-      <div className="ml-64 min-h-screen flex flex-col">
-
+      <div className="ml-64 flex min-h-screen flex-col">
 
         {/* ================= HEADER ================= */}
 
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
 
-          {/* ONLY ONE DASHBOARD */}
+          {/* PAGE TITLE */}
+
           <h1 className="text-xl font-bold text-slate-900">
-            Dashboard
+            {getPageTitle()}
           </h1>
-
 
           <div className="flex items-center gap-4">
 
             {/* ================= NOTIFICATION ================= */}
 
             <button
-              className="relative w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+              type="button"
+              className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
             >
 
               <svg
-                className="w-5 h-5"
+                className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
@@ -242,14 +379,13 @@ function DashboardLayout({ children, role }) {
 
               </svg>
 
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500"></span>
 
             </button>
 
-
             {/* ================= USER ================= */}
 
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-3">
 
               <div className="text-right">
 
@@ -263,8 +399,7 @@ function DashboardLayout({ children, role }) {
 
               </div>
 
-
-              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
 
                 <span className="text-sm font-bold text-blue-700">
                   {name.charAt(0).toUpperCase()}
@@ -278,19 +413,15 @@ function DashboardLayout({ children, role }) {
 
         </header>
 
-
         {/* ================= MAIN CONTENT ================= */}
 
-        <main className="flex-1 p-6 overflow-y-auto">
-
+        <main className="flex-1 overflow-y-auto p-6">
           {children}
-
         </main>
-
 
         {/* ================= FOOTER ================= */}
 
-        <footer className="h-12 bg-white border-t border-slate-200 flex items-center justify-center shrink-0">
+        <footer className="flex h-12 shrink-0 items-center justify-center border-t border-slate-200 bg-white">
 
           <p className="text-xs text-slate-500">
             © 2026 Mobile Repair Centre — Repair Management System
@@ -300,16 +431,17 @@ function DashboardLayout({ children, role }) {
 
       </div>
 
-
-      {/* ================= LOGOUT POPUP ================= */}
+      {/* =====================================================
+          LOGOUT CONFIRMATION
+      ===================================================== */}
 
       {showLogoutConfirm && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
 
-          <div className="w-full max-w-sm bg-white rounded-xl shadow-xl border border-slate-200">
+          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white shadow-xl">
 
-            <div className="h-1 bg-blue-700 rounded-t-xl"></div>
+            <div className="h-1 rounded-t-xl bg-blue-700"></div>
 
             <div className="p-6">
 
@@ -317,22 +449,24 @@ function DashboardLayout({ children, role }) {
                 Confirm Logout
               </h2>
 
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="mt-2 text-sm text-slate-500">
                 Are you sure you want to logout from your account?
               </p>
 
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="mt-6 flex justify-end gap-3">
 
                 <button
+                  type="button"
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="px-4 py-2 rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
                 >
                   Logout
                 </button>

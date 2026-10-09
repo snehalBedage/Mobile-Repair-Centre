@@ -1,89 +1,93 @@
-const API_BASE_URL = "http://127.0.0.1:8000";
 
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://127.0.0.1:8000/api/",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Add JWT token to protected requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access_token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Login
 export const loginUser = async (email, password) => {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
-    method: "POST",
+  try {
+    const response = await api.post("auth/login/", {
+      email: email.trim(),
+      password,
+    });
 
-    headers: {
-      "Content-Type": "application/json",
-    },
+    return response.data;
+  } catch (error) {
+    const data = error.response?.data;
 
-    body: JSON.stringify({
-      email: email,
-      password: password,
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
     throw new Error(
-      data.detail || "Invalid email or password."
+      data?.detail ||
+      data?.non_field_errors?.[0] ||
+      "Login failed. Please check your email and password."
     );
   }
-
-  return data;
 };
 
+// Forgot Password
 export const forgotPassword = async (email) => {
-  const response = await fetch(
-    "http://127.0.0.1:8000/api/auth/forgot-password/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email,
-      }),
-    }
-  );
+  try {
+    const response = await api.post("auth/forgot-password/", {
+      email: email.trim(),
+    });
 
-  const data = await response.json();
+    return response.data;
+  } catch (error) {
+    const data = error.response?.data;
 
-  if (!response.ok) {
     throw new Error(
-      data.email?.[0] ||
-      data.message ||
+      data?.email?.[0] ||
+      data?.detail ||
       "Unable to process password reset request."
     );
   }
-
-  return data;
 };
 
+// Reset Password
 export const resetPassword = async (
   uid,
   token,
   newPassword,
   confirmPassword
 ) => {
-  const response = await fetch(
-    "http://127.0.0.1:8000/api/auth/reset-password/",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        uid: uid,
-        token: token,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      }),
-    }
-  );
+  try {
+    const response = await api.post("auth/reset-password/", {
+      uid,
+      token,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    });
 
-  const data = await response.json();
+    return response.data;
+  } catch (error) {
+    const data = error.response?.data;
 
-  if (!response.ok) {
     throw new Error(
-      data.confirm_password?.[0] ||
-      data.new_password?.[0] ||
-      data.message ||
+      data?.new_password?.[0] ||
+      data?.confirm_password?.[0] ||
+      data?.token?.[0] ||
+      data?.detail ||
       "Unable to reset password."
     );
   }
-
-  return data;
 };
+
+export default api;
