@@ -18,6 +18,8 @@ import JobCards from "./pages/JobCards";
 import JobCardDetail from "./pages/JobCardDetail";
 import TrackRepair from "./pages/TrackRepair";
 import Estimates from "./pages/Estimates";
+import SpareParts from "./pages/SpareParts";
+import JobParts from "./pages/JobParts";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleLayout from "./layouts/RoleLayout";
@@ -26,7 +28,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* ============================= */}
         {/* PUBLIC PAGES */}
         {/* ============================= */}
@@ -119,6 +120,17 @@ function App() {
             path="/estimates"
             element={<Estimates />}
           />
+
+          {/* SPARE PARTS */}
+          <Route
+            path="/spare-parts"
+            element={<SpareParts />}
+          />
+          {/* JOB PARTS */}
+<Route
+  path="/job-parts"
+  element={<JobParts />}
+/>
         </Route>
 
         {/* ============================= */}
@@ -138,7 +150,6 @@ function App() {
             element={<CustomerDashboard />}
           />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );
