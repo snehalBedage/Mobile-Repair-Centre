@@ -20,6 +20,10 @@ import TrackRepair from "./pages/TrackRepair";
 import Estimates from "./pages/Estimates";
 import SpareParts from "./pages/SpareParts";
 import JobParts from "./pages/JobParts";
+import Payments from "./pages/Payments";
+import Warranties from "./pages/Warranties";
+import Reports from "./pages/Reports";
+import Users from "./pages/Users";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleLayout from "./layouts/RoleLayout";
@@ -28,14 +32,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ============================= */}
         {/* PUBLIC PAGES */}
-        {/* ============================= */}
-
         <Route path="/" element={<Home />} />
-
         <Route path="/login" element={<Login />} />
-
         <Route path="/register" element={<Registration />} />
 
         <Route
@@ -54,10 +53,7 @@ function App() {
           element={<TrackRepair />}
         />
 
-        {/* ============================= */}
         {/* ADMIN AND STAFF LAYOUT */}
-        {/* ============================= */}
-
         <Route
           element={
             <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -85,58 +81,49 @@ function App() {
             }
           />
 
-          {/* CUSTOMERS */}
+          {/* SHARED ADMIN AND STAFF PAGES */}
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/devices" element={<Devices />} />
+          <Route path="/technicians" element={<Technicians />} />
+          <Route path="/job-cards" element={<JobCards />} />
+          <Route path="/job-cards/:id" element={<JobCardDetail />} />
+          <Route path="/estimates" element={<Estimates />} />
+          <Route path="/spare-parts" element={<SpareParts />} />
+          <Route path="/job-parts" element={<JobParts />} />
+          <Route path="/payments" element={<Payments />} />
+
+          {/* ADMIN AND STAFF WARRANTIES */}
           <Route
-            path="/customers"
-            element={<Customers />}
+            path="/warranties"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+                <Warranties />
+              </ProtectedRoute>
+            }
           />
 
-          {/* DEVICES */}
+          {/* ADMIN ONLY REPORTS */}
           <Route
-            path="/devices"
-            element={<Devices />}
+            path="/reports"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Reports />
+              </ProtectedRoute>
+            }
           />
 
-          {/* TECHNICIANS */}
+          {/* ADMIN ONLY USERS AND ROLES */}
           <Route
-            path="/technicians"
-            element={<Technicians />}
+            path="/users-roles"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Users />
+              </ProtectedRoute>
+            }
           />
-
-          {/* JOB CARDS LIST */}
-          <Route
-            path="/job-cards"
-            element={<JobCards />}
-          />
-
-          {/* JOB CARD DETAILS */}
-          <Route
-            path="/job-cards/:id"
-            element={<JobCardDetail />}
-          />
-
-          {/* ESTIMATES */}
-          <Route
-            path="/estimates"
-            element={<Estimates />}
-          />
-
-          {/* SPARE PARTS */}
-          <Route
-            path="/spare-parts"
-            element={<SpareParts />}
-          />
-          {/* JOB PARTS */}
-<Route
-  path="/job-parts"
-  element={<JobParts />}
-/>
         </Route>
 
-        {/* ============================= */}
         {/* CUSTOMER LAYOUT */}
-        {/* ============================= */}
-
         <Route
           element={
             <ProtectedRoute allowedRoles={["CUSTOMER"]}>
@@ -144,7 +131,6 @@ function App() {
             </ProtectedRoute>
           }
         >
-          {/* CUSTOMER DASHBOARD */}
           <Route
             path="/customer-dashboard"
             element={<CustomerDashboard />}

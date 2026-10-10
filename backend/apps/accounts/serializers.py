@@ -132,3 +132,65 @@ class ResetPasswordSerializer(serializers.Serializer):
             })
 
         return data
+
+
+class UserManagementSerializer(serializers.ModelSerializer):
+    """Safe user details for Admin user management."""
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'name',
+            'email',
+            'role',
+            'is_active',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+
+class StaffCreateSerializer(serializers.ModelSerializer):
+    """Allow Admin to create Staff accounts safely."""
+
+    password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        required=True,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'name',
+            'email',
+            'password',
+        ]
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                'An account with this email already exists.'
+            )
+
+        return value
+
+    def validate_name(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError(
+                'Name cannot be empty.'
+            )
+
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create_user(
+            name=validated_data['name'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            role='STAFF',
+        )

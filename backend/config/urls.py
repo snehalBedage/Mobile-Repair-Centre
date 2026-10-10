@@ -8,6 +8,9 @@ from apps.accounts.views import (
     ForgotPasswordView,
     ResetPasswordView,
      CurrentUserView,
+     UserManagementListCreateView,
+UserManagementStatusView,
+UserManagementDeleteView
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -116,4 +119,24 @@ urlpatterns = [
     CurrentUserView.as_view(),
     name='current_user'
 ),
+
+# Admin User Management
+path(
+    'api/auth/users/',
+    UserManagementListCreateView.as_view(),
+    name='user-management-list-create',
+),
+path(
+    'api/auth/users/<int:pk>/status/',
+    UserManagementStatusView.as_view(),
+    name='user-management-status',
+),
+
+
+path(
+    "api/auth/users/<int:pk>/",
+    UserManagementDeleteView.as_view(),
+    name="user-management-delete",
+),
+
 ]
