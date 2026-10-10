@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.db import models
 
@@ -76,4 +77,5 @@ class Device(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.brand} {self.model} - {self.imei}"
+        return f"{self.brand} {self.model}"
+

@@ -10,7 +10,14 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+
 import Customers from "./pages/Customers";
+import Devices from "./pages/Devices";
+import Technicians from "./pages/Technicians";
+import JobCards from "./pages/JobCards";
+import JobCardDetail from "./pages/JobCardDetail";
+import TrackRepair from "./pages/TrackRepair";
+import Estimates from "./pages/Estimates";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleLayout from "./layouts/RoleLayout";
@@ -19,9 +26,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Pages */}
+
+        {/* ============================= */}
+        {/* PUBLIC PAGES */}
+        {/* ============================= */}
+
         <Route path="/" element={<Home />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Registration />} />
 
         <Route
@@ -34,7 +47,16 @@ function App() {
           element={<ResetPassword />}
         />
 
-        {/* Admin and Staff - Shared Sidebar */}
+        {/* PUBLIC REPAIR TRACKING */}
+        <Route
+          path="/track/:trackingToken"
+          element={<TrackRepair />}
+        />
+
+        {/* ============================= */}
+        {/* ADMIN AND STAFF LAYOUT */}
+        {/* ============================= */}
+
         <Route
           element={
             <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
@@ -42,6 +64,7 @@ function App() {
             </ProtectedRoute>
           }
         >
+          {/* ADMIN DASHBOARD */}
           <Route
             path="/admin-dashboard"
             element={
@@ -51,6 +74,7 @@ function App() {
             }
           />
 
+          {/* STAFF DASHBOARD */}
           <Route
             path="/staff-dashboard"
             element={
@@ -60,17 +84,47 @@ function App() {
             }
           />
 
+          {/* CUSTOMERS */}
           <Route
             path="/customers"
-            element={
-              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
-                <Customers />
-              </ProtectedRoute>
-            }
+            element={<Customers />}
+          />
+
+          {/* DEVICES */}
+          <Route
+            path="/devices"
+            element={<Devices />}
+          />
+
+          {/* TECHNICIANS */}
+          <Route
+            path="/technicians"
+            element={<Technicians />}
+          />
+
+          {/* JOB CARDS LIST */}
+          <Route
+            path="/job-cards"
+            element={<JobCards />}
+          />
+
+          {/* JOB CARD DETAILS */}
+          <Route
+            path="/job-cards/:id"
+            element={<JobCardDetail />}
+          />
+
+          {/* ESTIMATES */}
+          <Route
+            path="/estimates"
+            element={<Estimates />}
           />
         </Route>
 
-        {/* Customer - Customer Sidebar */}
+        {/* ============================= */}
+        {/* CUSTOMER LAYOUT */}
+        {/* ============================= */}
+
         <Route
           element={
             <ProtectedRoute allowedRoles={["CUSTOMER"]}>
@@ -78,15 +132,13 @@ function App() {
             </ProtectedRoute>
           }
         >
+          {/* CUSTOMER DASHBOARD */}
           <Route
             path="/customer-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["CUSTOMER"]}>
-                <CustomerDashboard />
-              </ProtectedRoute>
-            }
+            element={<CustomerDashboard />}
           />
         </Route>
+
       </Routes>
     </BrowserRouter>
   );

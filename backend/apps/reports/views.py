@@ -228,27 +228,6 @@ class RepairPerformanceReportView(APIView):
             'cancelled_repairs': cancelled_repairs,
         })
 
-
-class JobCardStatusReportView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        if request.user.role not in ['ADMIN', 'STAFF']:
-            return Response(
-                {'detail': 'Only Admin and Staff can view reports.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        status_report = {}
-
-        for status_value, status_label in JobCard.Status.choices:
-            status_report[status_value] = JobCard.objects.filter(
-                status=status_value
-            ).count()
-
-        return Response(status_report)
-
-
 class RevenuePaymentReportView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -17,6 +17,7 @@ class TechnicianSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            
             'mobile',
             'email',
             'specialization',
@@ -25,6 +26,7 @@ class TechnicianSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'id',
+           
             'status',
         ]
 
@@ -94,6 +96,11 @@ class JobCardSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_fields(self):
+             fields = super().get_fields()
+             fields['intake_date'].required = False
+             return fields  
     
     def validate(self, attrs):
 
@@ -197,12 +204,29 @@ class JobCardSerializer(serializers.ModelSerializer):
         # Create Job Card
         # -------------------------------------------------
 
+                # -------------------------------------------------
+        # Create Job Card
+        # -------------------------------------------------
+
+               # -------------------------------------------------
+        # Set Intake Date Automatically
+        # -------------------------------------------------
+
+        validated_data.setdefault(
+            'intake_date',
+            timezone.now()
+        )
+
+        # -------------------------------------------------
+        # Create Job Card
+        # -------------------------------------------------
+
         return JobCard.objects.create(
             job_card_number=job_card_number,
             tracking_token=tracking_token,
             **validated_data
         )
-
+        
     def update(self, instance, validated_data):
 
         # -------------------------------------------------
@@ -294,7 +318,20 @@ class TechnicianStatusSerializer(serializers.Serializer):
     )
 
 # Estimate Serializer
+
 class EstimateSerializer(serializers.ModelSerializer):
+
+    job_card_number = serializers.CharField(
+        source='job_card.job_card_number',
+        read_only=True
+    )
+
+    customer_name = serializers.CharField(
+        source='job_card.customer.name',
+        read_only=True
+    )
+
+    device_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Estimate
@@ -302,6 +339,9 @@ class EstimateSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'job_card',
+            'job_card_number',
+            'customer_name',
+            'device_name',
             'service_cost',
             'parts_cost',
             'total_amount',
@@ -314,6 +354,9 @@ class EstimateSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'id',
+            'job_card_number',
+            'customer_name',
+            'device_name',
             'total_amount',
             'approval_status',
             'approved_by',
@@ -321,6 +364,10 @@ class EstimateSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_device_name(self, obj):
+        device = obj.job_card.device
+        return f"{device.brand} {device.model}".strip()
 
     def validate_service_cost(self, value):
         if value < 0:
@@ -348,7 +395,6 @@ class EstimateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-
         service_cost = validated_data.get('service_cost', 0)
         parts_cost = validated_data.get('parts_cost', 0)
 
@@ -359,15 +405,24 @@ class EstimateSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
+        job_card = estimate.job_card
+        job_card.status = JobCard.Status.WAITING_FOR_APPROVAL
+        job_card.save(update_fields=['status', 'updated_at'])
+
+        StatusHistory.objects.create(
+            job_card=job_card,
+            status=JobCard.Status.WAITING_FOR_APPROVAL,
+            remarks='Estimate created; awaiting customer approval.',
+            changed_by=self.context['request'].user
+        )
+
         return estimate
 
     def update(self, instance, validated_data):
-
         service_cost = validated_data.get(
             'service_cost',
             instance.service_cost
         )
-
         parts_cost = validated_data.get(
             'parts_cost',
             instance.parts_cost
@@ -376,7 +431,6 @@ class EstimateSerializer(serializers.ModelSerializer):
         instance.total_amount = service_cost + parts_cost
 
         return super().update(instance, validated_data)
-
 
 # Estimate Approval Serializer
 class EstimateApprovalSerializer(serializers.Serializer):

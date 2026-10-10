@@ -25,7 +25,6 @@ class CustomerSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'customer_code',
-            'status',
             'created_at',
             'updated_at',
         ]
@@ -69,6 +68,7 @@ class DeviceSerializer(serializers.ModelSerializer):
 
         fields = [
             'id',
+           
             'customer',
             'brand',
             'model',
@@ -80,7 +80,8 @@ class DeviceSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'id',
-            'created_at',
+            
+        'created_at',
             'updated_at',
         ]
 

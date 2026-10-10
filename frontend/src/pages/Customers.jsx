@@ -2,6 +2,29 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
+const emptyForm = {
+  name: "",
+  mobile: "",
+  email: "",
+  password: "",
+  confirm_password: "",
+  address: "",
+};
+
+const inputClass =
+  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
+const labelClass =
+  "mb-1.5 block text-sm font-medium text-slate-700";
+
+function RequiredLabel({ htmlFor, children }) {
+  return (
+    <label htmlFor={htmlFor} className={labelClass}>
+      {children} <span className="font-bold text-red-500">*</span>
+    </label>
+  );
+}
+
 function Customers() {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
@@ -9,21 +32,12 @@ function Customers() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  const emptyForm = {
-    name: "",
-    mobile: "",
-    email: "",
-    password: "",
-    confirm_password: "",
-    address: "",
-  };
-
-  const [formData, setFormData] = useState(emptyForm);
-
+  const [formData, setFormData] = useState({ ...emptyForm });
   const [editData, setEditData] = useState({
     name: "",
     mobile: "",
@@ -33,7 +47,7 @@ function Customers() {
   });
 
   // LOAD CUSTOMERS
-  const fetchCustomers = async (searchValue = "") => {
+  async function fetchCustomers(searchValue = "") {
     try {
       setLoading(true);
       setError("");
@@ -42,13 +56,9 @@ function Customers() {
         params: searchValue ? { search: searchValue } : {},
       });
 
-      if (Array.isArray(response.data)) {
-        setCustomers(response.data);
-      } else {
-        setCustomers(response.data.results || []);
-      }
+      const data = response.data;
+      setCustomers(Array.isArray(data) ? data : data.results || []);
     } catch (err) {
-      console.error("Customer fetch error:", err);
       setError(
         err.response?.data?.detail || "Unable to load customers."
       );
@@ -56,13 +66,13 @@ function Customers() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
-  // SEARCH CUSTOMERS
+  // DEBOUNCED SEARCH
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCustomers(search.trim());
@@ -71,42 +81,45 @@ function Customers() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // ADD FORM INPUT
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  // FORM INPUT HANDLERS
+  function handleChange(event) {
+    const { name, value } = event.target;
+
     setFormData((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: name === "mobile" ? value.replace(/\D/g, "").slice(0, 10) : value,
     }));
-  };
+  }
 
-  // EDIT FORM INPUT
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
+  function handleEditChange(event) {
+    const { name, value } = event.target;
+
     setEditData((previous) => ({
       ...previous,
-      [name]: value,
+      [name]:
+        name === "mobile"
+          ? value.replace(/\D/g, "").slice(0, 10)
+          : value,
     }));
-  };
+  }
 
-  // OPEN ADD FORM
-  const openAddForm = () => {
+  // ADD CUSTOMER
+  function openAddForm() {
     setError("");
     setSuccess("");
     setFormData({ ...emptyForm });
     setShowAddForm(true);
-  };
+  }
 
-  // CLOSE ADD FORM
-  const closeAddForm = () => {
+  function closeAddForm() {
     if (saving) return;
     setShowAddForm(false);
     setFormData({ ...emptyForm });
-  };
+    setError("");
+  }
 
-  // CREATE CUSTOMER
-  const handleCreateCustomer = async (e) => {
-    e.preventDefault();
+  async function handleCreateCustomer(event) {
+    event.preventDefault();
     setError("");
     setSuccess("");
 
@@ -118,6 +131,11 @@ function Customers() {
       !formData.confirm_password
     ) {
       setError("Please fill all required fields.");
+      return;
+    }
+
+    if (formData.mobile.length !== 10) {
+      setError("Mobile number must contain exactly 10 digits.");
       return;
     }
 
@@ -138,35 +156,27 @@ function Customers() {
         address: formData.address.trim(),
       });
 
-      setSuccess("Customer created successfully.");
       setShowAddForm(false);
       setFormData({ ...emptyForm });
+      setSuccess("Customer created successfully.");
 
       await fetchCustomers(search.trim());
     } catch (err) {
-      console.error("Customer create error:", err);
       const data = err.response?.data;
+      const firstError = data && Object.values(data).flat()[0];
 
-      if (data?.email) {
-        setError(Array.isArray(data.email) ? data.email[0] : data.email);
-      } else if (data?.confirm_password) {
-        setError(
-          Array.isArray(data.confirm_password)
-            ? data.confirm_password[0]
-            : data.confirm_password
-        );
-      } else if (data?.detail) {
-        setError(data.detail);
-      } else {
-        setError("Unable to create customer.");
-      }
+      setError(
+        typeof firstError === "string"
+          ? firstError
+          : "Unable to create customer. Please check the entered details."
+      );
     } finally {
       setSaving(false);
     }
-  };
+  }
 
-  // OPEN EDIT FORM
-  const openEditForm = (customer) => {
+  // EDIT CUSTOMER
+  function openEditForm(customer) {
     setError("");
     setSuccess("");
     setSelectedCustomer(customer);
@@ -180,18 +190,17 @@ function Customers() {
     });
 
     setShowEditForm(true);
-  };
+  }
 
-  // CLOSE EDIT FORM
-  const closeEditForm = () => {
+  function closeEditForm() {
     if (saving) return;
     setShowEditForm(false);
     setSelectedCustomer(null);
-  };
+    setError("");
+  }
 
-  // UPDATE CUSTOMER INCLUDING STATUS
-  const handleUpdateCustomer = async (e) => {
-    e.preventDefault();
+  async function handleUpdateCustomer(event) {
+    event.preventDefault();
 
     if (!selectedCustomer) return;
 
@@ -203,7 +212,12 @@ function Customers() {
       !editData.mobile.trim() ||
       !editData.email.trim()
     ) {
-      setError("Name, mobile and email are required.");
+      setError("Please fill all required fields.");
+      return;
+    }
+
+    if (editData.mobile.length !== 10) {
+      setError("Mobile number must contain exactly 10 digits.");
       return;
     }
 
@@ -220,35 +234,35 @@ function Customers() {
 
       setShowEditForm(false);
       setSelectedCustomer(null);
-      setSuccess("Customer details and status updated successfully.");
+      setSuccess("Customer details updated successfully.");
 
       await fetchCustomers(search.trim());
     } catch (err) {
-      console.error("Customer update error:", err);
       const data = err.response?.data;
+      const firstError = data && Object.values(data).flat()[0];
 
-      if (data?.email) {
-        setError(Array.isArray(data.email) ? data.email[0] : data.email);
-      } else if (data?.mobile) {
-        setError(Array.isArray(data.mobile) ? data.mobile[0] : data.mobile);
-      } else if (data?.status) {
-        setError(Array.isArray(data.status) ? data.status[0] : data.status);
-      } else if (data?.detail) {
-        setError(data.detail);
-      } else {
-        setError("Unable to update customer.");
-      }
+      setError(
+        typeof firstError === "string"
+          ? firstError
+          : "Unable to update customer. Please check the entered details."
+      );
     } finally {
       setSaving(false);
     }
-  };
+  }
+
+  function statusStyle(status) {
+    return status === "ACTIVE"
+      ? "bg-green-50 text-green-700"
+      : "bg-slate-100 text-slate-600";
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* PAGE HEADER */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-xl font-bold text-slate-800">
             Customer Management
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -257,49 +271,91 @@ function Customers() {
         </div>
 
         <button
+          type="button"
           onClick={openAddForm}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
         >
-          + Add Customer
+          <span className="text-lg leading-none">+</span>
+          Add Customer
         </button>
       </div>
 
       {/* SUCCESS MESSAGE */}
       {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div
+          role="status"
+          className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+        >
           {success}
         </div>
       )}
 
       {/* ERROR MESSAGE */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {error && !showAddForm && !showEditForm && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
           {error}
         </div>
       )}
 
-      {/* SEARCH */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      {/* SEARCH CARD — SAME STYLE AS DEVICES */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-slate-800">
+            Search Customers
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Search by customer name, customer code, mobile or email.
+          </p>
+        </div>
+
+        <div className="relative">
+          <svg
+            className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m16 16 4 4" />
+          </svg>
+
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, code, mobile or email..."
-            className="w-full max-w-md rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search customers..."
+            aria-label="Search customers"
+            className="w-full rounded-lg border border-slate-300 bg-slate-50 py-3 pl-11 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
           />
 
-          <p className="text-sm text-slate-500">
-            {customers.length} customer{customers.length !== 1 ? "s" : ""}
-          </p>
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-lg leading-none text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+            >
+              ×
+            </button>
+          )}
         </div>
+
+        <p className="mt-3 text-xs text-slate-500">
+          {customers.length} customer
+          {customers.length !== 1 ? "s" : ""} found
+        </p>
       </div>
 
       {/* CUSTOMER TABLE */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[950px]">
-            <thead className="bg-slate-900">
+          <table className="w-full min-w-[950px] border-collapse text-left">
+            <thead className="bg-slate-900 text-white">
               <tr>
                 {[
                   "Customer Code",
@@ -312,7 +368,7 @@ function Customers() {
                 ].map((heading) => (
                   <th
                     key={heading}
-                    className="px-5 py-3 text-left text-xs font-semibold text-white"
+                    className="px-5 py-4 text-xs font-semibold uppercase tracking-wider"
                   >
                     {heading}
                   </th>
@@ -324,7 +380,7 @@ function Customers() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan={7}
                     className="px-5 py-12 text-center text-sm text-slate-500"
                   >
                     Loading customers...
@@ -333,53 +389,65 @@ function Customers() {
               ) : customers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="7"
-                    className="px-5 py-12 text-center text-sm text-slate-500"
+                    colSpan={7}
+                    className="px-5 py-12 text-center"
                   >
-                    {search ? "No customers found." : "No customer data available."}
+                    <p className="text-sm font-semibold text-slate-700">
+                      No customers found
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Try another search or add a customer.
+                    </p>
                   </td>
                 </tr>
               ) : (
                 customers.map((customer) => (
-                  <tr key={customer.id} className="transition hover:bg-slate-50">
+                  <tr
+                    key={customer.id}
+                    className="transition hover:bg-slate-50"
+                  >
                     <td className="px-5 py-4 text-sm font-semibold text-blue-600">
-                      {customer.customer_code}
+                      {customer.customer_code || "—"}
                     </td>
 
-                    <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                      {customer.name}
+                    <td className="px-5 py-4">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {customer.name}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        ID: {customer.id}
+                      </p>
                     </td>
 
                     <td className="px-5 py-4 text-sm text-slate-600">
-                      {customer.mobile}
+                      {customer.mobile || "—"}
                     </td>
 
                     <td className="px-5 py-4 text-sm text-slate-600">
-                      {customer.email}
+                      {customer.email || "—"}
                     </td>
 
                     <td className="max-w-[220px] px-5 py-4 text-sm text-slate-600">
-                      <div className="truncate">
+                      <span className="line-clamp-2">
                         {customer.address || "—"}
-                      </div>
+                      </span>
                     </td>
 
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                          customer.status === "ACTIVE"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(
+                          customer.status
+                        )}`}
                       >
-                        {customer.status || "UNKNOWN"}
+                        {customer.status || "ACTIVE"}
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-5 py-4">
                       <button
+                        type="button"
                         onClick={() => openEditForm(customer)}
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-500 hover:text-blue-600"
+                        className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
                       >
                         Edit
                       </button>
@@ -390,129 +458,164 @@ function Customers() {
             </tbody>
           </table>
         </div>
+
+        <div className="border-t border-slate-200 px-5 py-3">
+          <p className="text-xs text-slate-500">
+            Showing {customers.length} customer
+            {customers.length !== 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
       {/* ADD CUSTOMER MODAL */}
       {showAddForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4">
+          <div className="my-auto max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
             <form onSubmit={handleCreateCustomer}>
-              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-800">
+                  <h2 className="text-lg font-bold text-slate-800">
                     Add Customer
                   </h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    Create a new customer account.
+                    Enter the customer's details.
                   </p>
                 </div>
 
                 <button
                   type="button"
                   onClick={closeAddForm}
-                  className="text-2xl leading-none text-slate-400 hover:text-slate-700"
+                  disabled={saving}
+                  aria-label="Close form"
+                  className="rounded-lg px-2 py-1 text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 px-6 py-6 md:grid-cols-2">
+              {error && (
+                <div
+                  role="alert"
+                  className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:mx-6"
+                >
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Name *
-                  </label>
+                  <RequiredLabel htmlFor="add-name">
+                    Customer Name
+                  </RequiredLabel>
                   <input
+                    id="add-name"
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    maxLength={100}
                     placeholder="Enter customer name"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Mobile *
-                  </label>
+                  <RequiredLabel htmlFor="add-mobile">
+                    Mobile Number
+                  </RequiredLabel>
                   <input
-                    type="text"
+                    id="add-mobile"
+                    type="tel"
                     name="mobile"
+                    inputMode="numeric"
                     value={formData.mobile}
                     onChange={handleChange}
                     required
-                    placeholder="Enter mobile number"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    minLength={10}
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    placeholder="10-digit mobile number"
+                    className={inputClass}
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Email *
-                  </label>
+                <div className="sm:col-span-2">
+                  <RequiredLabel htmlFor="add-email">
+                    Email Address
+                  </RequiredLabel>
                   <input
+                    id="add-email"
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    maxLength={150}
                     placeholder="Enter email address"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Password *
-                  </label>
+                  <RequiredLabel htmlFor="add-password">
+                    Password
+                  </RequiredLabel>
                   <input
+                    id="add-password"
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                     placeholder="Create password"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Confirm Password *
-                  </label>
+                <div>
+                  <RequiredLabel htmlFor="add-confirm-password">
+                    Confirm Password
+                  </RequiredLabel>
                   <input
+                    id="add-confirm-password"
                     type="password"
                     name="confirm_password"
                     value={formData.confirm_password}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                     placeholder="Confirm password"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="add-address"
+                    className={labelClass}
+                  >
                     Address
                   </label>
                   <textarea
-                    rows="3"
+                    id="add-address"
+                    rows={3}
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
-                    placeholder="Enter customer address"
-                    className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    placeholder="Enter customer address (optional)"
+                    className={`${inputClass} resize-none`}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
                 <button
                   type="button"
                   onClick={closeAddForm}
                   disabled={saving}
-                  className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -520,7 +623,7 @@ function Customers() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? "Creating..." : "Create Customer"}
                 </button>
@@ -532,112 +635,138 @@ function Customers() {
 
       {/* EDIT CUSTOMER MODAL */}
       {showEditForm && selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4">
+          <div className="my-auto max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
             <form onSubmit={handleUpdateCustomer}>
-              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-800">
+                  <h2 className="text-lg font-bold text-slate-800">
                     Edit Customer
                   </h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    Customer Code: {selectedCustomer.customer_code}
+                    Customer Code: {selectedCustomer.customer_code || "—"}
                   </p>
                 </div>
 
                 <button
                   type="button"
                   onClick={closeEditForm}
-                  className="text-2xl leading-none text-slate-400 hover:text-slate-700"
+                  disabled={saving}
+                  aria-label="Close form"
+                  className="rounded-lg px-2 py-1 text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 px-6 py-6 md:grid-cols-2">
+              {error && (
+                <div
+                  role="alert"
+                  className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 sm:mx-6"
+                >
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Name
-                  </label>
+                  <RequiredLabel htmlFor="edit-name">
+                    Customer Name
+                  </RequiredLabel>
                   <input
+                    id="edit-name"
                     type="text"
                     name="name"
                     value={editData.name}
                     onChange={handleEditChange}
                     required
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    maxLength={100}
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Mobile
-                  </label>
+                  <RequiredLabel htmlFor="edit-mobile">
+                    Mobile Number
+                  </RequiredLabel>
                   <input
-                    type="text"
+                    id="edit-mobile"
+                    type="tel"
                     name="mobile"
+                    inputMode="numeric"
                     value={editData.mobile}
                     onChange={handleEditChange}
                     required
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    minLength={10}
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                    Email
-                  </label>
+                <div className="sm:col-span-2">
+                  <RequiredLabel htmlFor="edit-email">
+                    Email Address
+                  </RequiredLabel>
                   <input
+                    id="edit-email"
                     type="email"
                     name="email"
                     value={editData.email}
                     onChange={handleEditChange}
                     required
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    maxLength={150}
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="edit-address"
+                    className={labelClass}
+                  >
                     Address
                   </label>
                   <textarea
-                    rows="3"
+                    id="edit-address"
+                    rows={3}
                     name="address"
                     value={editData.address}
                     onChange={handleEditChange}
-                    className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    placeholder="Enter customer address (optional)"
+                    className={`${inputClass} resize-none`}
                   />
                 </div>
 
-                {/* CUSTOMER STATUS */}
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="edit-status"
+                    className={labelClass}
+                  >
                     Customer Status
                   </label>
-
                   <select
+                    id="edit-status"
                     name="status"
                     value={editData.status}
                     onChange={handleEditChange}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                    className={inputClass}
                   >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
                   </select>
-
                   <p className="mt-1.5 text-xs text-slate-500">
                     Select whether this customer profile is active or inactive.
                   </p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
                 <button
                   type="button"
                   onClick={closeEditForm}
                   disabled={saving}
-                  className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -645,7 +774,7 @@ function Customers() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>

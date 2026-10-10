@@ -197,18 +197,6 @@ class ResetPasswordView(APIView):
         }, status=status.HTTP_200_OK)
 
 class CurrentUserView(APIView):
-    permission_classes = []
-
-    def get(self, request):
-        return Response({
-            "id": request.user.id,
-            "name": request.user.name,
-            "email": request.user.email,
-            "role": request.user.role,
-            "is_active": request.user.is_active
-        }, status=status.HTTP_200_OK)
-
-class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

@@ -4,6 +4,7 @@ from django.utils import timezone
 
 
 from apps.reports.audit import create_audit_log
+from django.db import transaction
 
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -228,84 +229,112 @@ class JobCardListCreateView(generics.ListCreateAPIView):
 # Job Card Status Update API
 # =========================================================
 
+
+
 class JobCardStatusUpdateView(generics.UpdateAPIView):
 
     queryset = JobCard.objects.all()
-
     serializer_class = JobCardStatusUpdateSerializer
-
-    permission_classes = [
-        IsAdminOrStaff
-    ]
+    permission_classes = [IsAdminOrStaff]
 
     def update(self, request, *args, **kwargs):
 
         job_card = self.get_object()
 
-        serializer = self.get_serializer(
-            data=request.data
-        )
-
-        serializer.is_valid(
-            raise_exception=True
-        )
-
-        new_status = serializer.validated_data[
-            'status'
-        ]
-
-        remarks = serializer.validated_data.get(
-            'remarks',
-            ''
-        )
-
-        old_status = job_card.status
-
-        # -------------------------------------------------
-        # Same Status Check
-        # -------------------------------------------------
-
-        if old_status == new_status:
-
+        # Prevent any status changes after rejection
+        if job_card.status == JobCard.Status.REJECTED:
             return Response(
                 {
-                    'detail':
-                        'Job Card is already in this status.'
+                    'detail': (
+                        'Rejected Job Cards cannot move '
+                        'to another status.'
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # -------------------------------------------------
-        # Completed Date Handling
-        # -------------------------------------------------
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        new_status = serializer.validated_data['status']
+        remarks = serializer.validated_data.get('remarks', '')
+
+        # Approval and rejection must use Estimate Approval API
+        if new_status in (
+            JobCard.Status.APPROVED,
+            JobCard.Status.REJECTED,
+        ):
+            return Response(
+                {
+                    'detail': (
+                        'Approval or rejection must be '
+                        'submitted through the Estimate Approval API.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        old_status = job_card.status
+
+        # Prevent duplicate status updates
+        if old_status == new_status:
+            return Response(
+                {'detail': 'Job Card is already in this status.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Repair cannot start without an approved estimate
+        if new_status == JobCard.Status.REPAIR_IN_PROGRESS:
+
+            approved_estimate_exists = Estimate.objects.filter(
+                job_card=job_card,
+                approval_status=Estimate.ApprovalStatus.APPROVED
+            ).exists()
+
+            if not approved_estimate_exists:
+                return Response(
+                    {
+                        'detail': (
+                            'Repair cannot start until the customer '
+                            'approves the estimate.'
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Prevent completion before QC and delivery readiness
         if new_status == JobCard.Status.COMPLETED:
+            if old_status != JobCard.Status.READY_FOR_DELIVERY:
+                return Response(
+                    {
+                        'detail': (
+                            'Job Card must pass QC and be marked '
+                            'Ready for Delivery before completion.'
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
+        # Handle completion date
+        if new_status == JobCard.Status.COMPLETED:
             job_card.completed_date = timezone.now()
 
         elif old_status == JobCard.Status.COMPLETED:
-
             job_card.completed_date = None
 
-        # -------------------------------------------------
-        # Update Status
-        # -------------------------------------------------
-
+        # Update Job Card status
         job_card.status = new_status
-
         job_card.save()
 
+        # Create audit log
         create_audit_log(
-    user=request.user,
-    action=f"Job Card status changed to {new_status}",
-    table_name="JOB_CARDS",
-    record_id=job_card.id
-)
+            user=request.user,
+            action=f"Job Card status changed to {new_status}",
+            table_name="JOB_CARDS",
+            record_id=job_card.id
+        )
 
-        # -------------------------------------------------
-        # Create Status History
-        # -------------------------------------------------
-
+        # Create status history
         StatusHistory.objects.create(
             job_card=job_card,
             status=new_status,
@@ -313,36 +342,19 @@ class JobCardStatusUpdateView(generics.UpdateAPIView):
             changed_by=request.user
         )
 
-        # -------------------------------------------------
-        # Response
-        # -------------------------------------------------
-
+        # Return response
         return Response(
             {
-                'message':
-                    'Job Card status updated successfully.',
-
-                'job_card_id':
-                    job_card.id,
-
-                'job_card_number':
-                    job_card.job_card_number,
-
-                'old_status':
-                    old_status,
-
-                'new_status':
-                    new_status,
-
-                'remarks':
-                    remarks,
-
-                'completed_date':
-                    job_card.completed_date,
+                'message': 'Job Card status updated successfully.',
+                'job_card_id': job_card.id,
+                'job_card_number': job_card.job_card_number,
+                'old_status': old_status,
+                'new_status': new_status,
+                'remarks': remarks,
+                'completed_date': job_card.completed_date,
             },
             status=status.HTTP_200_OK
         )
-
 
 # =========================================================
 # Job Card Status History API
@@ -455,40 +467,46 @@ class EstimateListCreateView(generics.ListCreateAPIView):
 
         return [IsAdminStaffOrOwnJobCard()]
 # Estimate Detail View
-class EstimateDetailView(generics.RetrieveUpdateAPIView):
+
+class EstimateDetailView(generics.RetrieveAPIView):
+    """
+    ADMIN/STAFF can view any estimate.
+    CUSTOMER can view only their own estimate.
+    Customers must use the approval API to approve/reject.
+    """
 
     serializer_class = EstimateSerializer
     permission_classes = [IsAdminStaffOrOwnEstimate]
 
     def get_queryset(self):
-
         user = self.request.user
 
-        if user.role in ['ADMIN', 'STAFF']:
-            return Estimate.objects.select_related(
-                'job_card',
-                'job_card__customer',
-                'job_card__device',
-                'approved_by'
-            ).all()
-
-        return Estimate.objects.filter(
-            job_card__customer__user=user
-        ).select_related(
+        queryset = Estimate.objects.select_related(
             'job_card',
             'job_card__customer',
             'job_card__device',
-            'approved_by'
+            'approved_by',
+        )
+
+        if user.role in ['ADMIN', 'STAFF']:
+            return queryset.all()
+
+        return queryset.filter(
+            job_card__customer__user=user
         )
 
 # Estimate Approval View
+
+
+
+# Estimate Approval View
+
 class EstimateApprovalView(generics.UpdateAPIView):
 
     serializer_class = EstimateApprovalSerializer
     permission_classes = [IsCustomer]
 
     def get_queryset(self):
-
         return Estimate.objects.filter(
             job_card__customer__user=self.request.user
         ).select_related(
@@ -496,62 +514,108 @@ class EstimateApprovalView(generics.UpdateAPIView):
             'job_card__customer'
         )
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
 
         estimate = self.get_object()
 
+        estimate = Estimate.objects.select_for_update().get(
+            pk=estimate.pk
+        )
+
+        job_card = JobCard.objects.select_for_update().get(
+            pk=estimate.job_card_id
+        )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        approval_status = serializer.validated_data['approval_status']
+        approval_status = serializer.validated_data[
+            'approval_status'
+        ]
         remarks = serializer.validated_data.get('remarks', '')
 
-        # Prevent duplicate approval/rejection
+        # Only pending estimates can be approved or rejected
         if estimate.approval_status != Estimate.ApprovalStatus.PENDING:
             return Response(
                 {
-                    'detail': 'This estimate has already been approved or rejected.'
+                    'detail': (
+                        'This estimate has already been '
+                        'approved or rejected.'
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Update Estimate approval details
+        # Job Card must be waiting for customer approval
+        if job_card.status != JobCard.Status.WAITING_FOR_APPROVAL:
+            return Response(
+                {
+                    'detail': (
+                        'This Job Card is not waiting for '
+                        'estimate approval.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Save customer decision
         estimate.approval_status = approval_status
         estimate.approved_by = request.user
         estimate.approved_at = timezone.now()
-        estimate.save()
 
-        # Update Job Card status
+        estimate.save(
+            update_fields=[
+                'approval_status',
+                'approved_by',
+                'approved_at',
+                'updated_at'
+            ]
+        )
+
+        # Update Job Card based on customer decision
         if approval_status == Estimate.ApprovalStatus.APPROVED:
             new_status = JobCard.Status.APPROVED
+            history_remarks = 'Customer approved the estimate.'
         else:
             new_status = JobCard.Status.REJECTED
+            history_remarks = 'Customer rejected the estimate.'
 
-        estimate.job_card.status = new_status
-        estimate.job_card.save()
+        job_card.status = new_status
+        job_card.save(
+            update_fields=['status', 'updated_at']
+        )
 
-        # Create Status History entry
+        # Record status history
         StatusHistory.objects.create(
-            job_card=estimate.job_card,
+            job_card=job_card,
             status=new_status,
-            remarks=remarks,
+            remarks=remarks or history_remarks,
             changed_by=request.user
+        )
+
+        # Audit log
+        create_audit_log(
+            user=request.user,
+            action=f"Estimate {approval_status.lower()}",
+            table_name="ESTIMATES",
+            record_id=estimate.id
         )
 
         return Response(
             {
-                'message': f'Estimate {approval_status.lower()} successfully.',
+                'message': (
+                    f'Estimate {approval_status.lower()} successfully.'
+                ),
                 'estimate_id': estimate.id,
-                'job_card_id': estimate.job_card.id,
-                'job_card_number': estimate.job_card.job_card_number,
+                'job_card_id': job_card.id,
+                'job_card_number': job_card.job_card_number,
                 'approval_status': estimate.approval_status,
-                'approved_by': request.user.id,
-                'approved_at': estimate.approved_at,
-                'job_card_status': estimate.job_card.status,
-                'status_history_created': True
+                'job_card_status': job_card.status,
             },
             status=status.HTTP_200_OK
         )
+
 
 class WarrantyListCreateView(APIView):
 

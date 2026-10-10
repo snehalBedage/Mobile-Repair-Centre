@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.db import models
 
@@ -10,13 +11,9 @@ class Technician(models.Model):
 
     id = models.BigAutoField(primary_key=True)
 
-    name = models.CharField(
-        max_length=100
-    )
+    name = models.CharField(max_length=100)
 
-    mobile = models.CharField(
-        max_length=20
-    )
+    mobile = models.CharField(max_length=20)
 
     email = models.EmailField(
         max_length=150,
@@ -24,9 +21,7 @@ class Technician(models.Model):
         null=True
     )
 
-    specialization = models.CharField(
-        max_length=150
-    )
+    specialization = models.CharField(max_length=150)
 
     status = models.CharField(
         max_length=20,
@@ -41,32 +36,20 @@ class Technician(models.Model):
 class JobCard(models.Model):
 
     class Status(models.TextChoices):
-
         RECEIVED = 'RECEIVED', 'Received'
-
         DIAGNOSIS = 'DIAGNOSIS', 'Diagnosis'
-
         ESTIMATE_PREPARED = 'ESTIMATE_PREPARED', 'Estimate Prepared'
-
         WAITING_FOR_APPROVAL = 'WAITING_FOR_APPROVAL', 'Waiting for Approval'
-
         APPROVED = 'APPROVED', 'Approved'
-
         REJECTED = 'REJECTED', 'Rejected'
-
         REPAIR_IN_PROGRESS = 'REPAIR_IN_PROGRESS', 'Repair in Progress'
-
         QC = 'QC', 'Quality Check'
-
         QC_FAILED = 'QC_FAILED', 'QC Failed'
-
         REPAIR_REQUIRED = 'REPAIR_REQUIRED', 'Repair Required'
-
         READY_FOR_DELIVERY = 'READY_FOR_DELIVERY', 'Ready for Delivery'
-
         COMPLETED = 'COMPLETED', 'Completed'
-
         CANCELLED = 'CANCELLED', 'Cancelled'
+
     class Priority(models.TextChoices):
         LOW = 'LOW', 'Low'
         MEDIUM = 'MEDIUM', 'Medium'
@@ -131,13 +114,9 @@ class JobCard(models.Model):
         blank=True
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.job_card_number
@@ -195,13 +174,9 @@ class Estimate(models.Model):
         blank=True
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Estimate - {self.job_card.job_card_number}"
@@ -217,9 +192,7 @@ class StatusHistory(models.Model):
         related_name='status_history'
     )
 
-    status = models.CharField(
-        max_length=30
-    )
+    status = models.CharField(max_length=30)
 
     remarks = models.TextField(
         blank=True,
@@ -232,9 +205,7 @@ class StatusHistory(models.Model):
         related_name='status_changes'
     )
 
-    changed_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    changed_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.job_card.job_card_number} - {self.status}"
@@ -272,13 +243,10 @@ class Warranty(models.Model):
         default=Status.ACTIVE
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.warranty_number
+

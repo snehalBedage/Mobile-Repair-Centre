@@ -90,4 +90,20 @@ export const resetPassword = async (
   }
 };
 
+
+ // Dashboard Summary
+export const getDashboardSummary = async () => {
+  try {
+    const response = await api.get("reports/dashboard-summary/");
+    return response.data;
+  } catch (error) {
+    const data = error.response?.data;
+
+    throw new Error(
+      data?.detail ||
+      "Unable to load dashboard data. Please try again."
+    );
+  }
+};
+
 export default api;
